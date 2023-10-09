@@ -1,0 +1,708 @@
+import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:intl/intl.dart';
+import 'news_screen.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:mysql1/mysql1.dart';
+
+const String apiKey = 'e577c54340ac483aa35105157233008';
+const String baseUrl = 'http://api.weatherapi.com/v1/forecast.json';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    DateTime now = DateTime.now();
+    int hour = now.hour;
+
+    Color backgroundColor;
+    Color textColor;
+    ThemeData myTheme = ThemeData();
+
+    if (hour >= 6 && hour <= 18) {
+      myTheme = myTheme.copyWith(
+        scaffoldBackgroundColor: Color(0xFF5991E1).withAlpha(3000),
+        appBarTheme: AppBarTheme(backgroundColor: Color(0xFF5991E1).withAlpha(3000)),
+        textTheme: TextTheme(bodyText2: TextStyle(color: Colors.black)),
+      );
+    } else {
+      myTheme = myTheme.copyWith(
+        scaffoldBackgroundColor: Color(0xFF140029).withAlpha(3000),
+        appBarTheme: AppBarTheme(backgroundColor: Color(0xFF140029).withAlpha(3000)),
+        textTheme: TextTheme(bodyText2: TextStyle(color: Color(0xFFFFFFe6))),
+      );
+    }
+
+    return MaterialApp(
+      theme: myTheme,
+      home: WeatherApp(),
+    );
+  }
+}
+
+class CustomDrawer extends StatelessWidget {
+  final Function showLocationDialog;
+
+  CustomDrawer(this.showLocationDialog);
+  @override
+  Widget build(BuildContext context) {
+    final deviceWidth = MediaQuery.of(context).size.width;
+    final drawerWidth = min(230.0, deviceWidth * 0.7);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.75),
+        border: Border.all(color: Colors.blue.withOpacity(0.6)),
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(100.0),
+          bottomRight: Radius.circular(100.0),
+          bottomLeft: Radius.circular(100.0),
+        ),
+      ),
+      width: drawerWidth,
+      child: Column(
+        children: <Widget>[
+          Container(
+            height: 50,
+          ),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: <Widget>[
+                ListTile(
+                  title: Text(
+                    'Choose/Add location',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                  onTap: () {
+                    showLocationDialog(context);
+                  },
+                ),
+                ListTile(
+                  title: Text(
+                    'Location added',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class WeatherDayInfo {
+  final String date;
+  final String maxTemp;
+  final String minTemp;
+  final String humidity;
+  final String precipMm;
+
+  WeatherDayInfo({
+    required this.date,
+    required this.maxTemp,
+    required this.minTemp,
+    required this.humidity,
+    required this.precipMm,
+  });
+}
+
+class WeatherInfoContainer extends StatelessWidget {
+  final String time;
+  final String temperature;
+  final String humidity;
+  final String precipMm;
+  final List<FlSpot> temperatureSpots;
+
+  WeatherInfoContainer({
+    required this.time,
+    required this.temperature,
+    required this.humidity,
+    required this.precipMm,
+    required this.temperatureSpots,
+  });
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 400.0,
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        border: Border.all(color: Color(0xFF4f00b9)),
+        color: Color(0xFF1e003d).withOpacity(0.05),
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.view_headline_outlined,
+                    size: 10.0,
+                    color: Colors.lightBlue,
+                  ),
+                  SizedBox(width: 4.0), // Tạo khoảng cách giữa icon và text
+                  Text(
+                    precipMm,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10.0,
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Text("Today's weather diagram",
+                    style: TextStyle(
+                      fontSize: 12.0,
+                    ),
+                  )
+                ],
+              ),
+              Row(
+                children: [
+                  Icon(
+                    Icons.opacity,
+                    size: 10.0,
+                    color: Colors.lightBlue,
+                  ),
+                  SizedBox(width: 4.0),
+                  Text(
+                    humidity,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10.0,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          SizedBox(height: 12.0),
+          Container(
+            height: 90.0,
+            child: LineChart(
+              LineChartData(
+                titlesData: FlTitlesData(
+                  leftTitles: SideTitles(showTitles: false),
+                  bottomTitles: SideTitles(showTitles: false),
+                ),
+                borderData: FlBorderData(show: false),
+                gridData: FlGridData(show: false),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: temperatureSpots,
+                    isCurved: true,
+                    belowBarData: BarAreaData(show: false),
+                    dotData: FlDotData(
+                      show: false,
+                      getDotPainter: (spot, percent, barData, index) {
+                        return FlDotCirclePainter(
+                          radius: 1.7,
+                          color: Colors.blue,
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+class WeatherApp extends StatefulWidget {
+  @override
+  _WeatherAppState createState() => _WeatherAppState();
+}
+
+class _WeatherAppState extends State<WeatherApp> {
+  String selectedLocation = 'Da lat';
+  bool _showTemperatureChart = false;
+  String temperature = '';
+  String conditionInfo = '';
+  String forecastInfo = '';
+  String humidity = '';
+  String maxTemperature = '';
+  String minTemperature = '';
+  String uvIndex = '';
+  String windSpeed = '';
+  String drivingDifficulty = '';
+  String visibility = '';
+  String moonPhase = '';
+  String feelsLike = '';
+  bool _isRefreshing = false;
+  String precipMm = '';
+  List<WeatherDayInfo> _weatherInfoList = [];
+  String _getDayOfWeek(String date) {
+    DateTime dateTime = DateTime.parse(date);
+    List<String> daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    return daysOfWeek[dateTime.weekday - 1];
+  }
+
+  List<FlSpot> _temperatureSpots = [];
+
+  Future<void> _fetchWeatherData() async {
+    setState(() {
+      _isRefreshing = true;
+    });
+    final response =
+    await http.get(Uri.parse('$baseUrl?key=$apiKey&q=$selectedLocation&days=3'));
+
+    if (response.statusCode == 200) {
+      Map<String, dynamic> data = jsonDecode(response.body);
+      setState(() {
+        temperature = '${(data['current']['temp_c'] as double).ceil()}°C';
+        conditionInfo = data['current']['condition']['text'];
+        humidity = '${data['current']['humidity']}%';
+        maxTemperature =
+        '${((data['forecast']['forecastday'][0]['day']['maxtemp_c'] as double).ceil())}°C';
+        minTemperature =
+        '${((data['forecast']['forecastday'][0]['day']['mintemp_c'] as double).ceil())}°C';
+        uvIndex = '${data['current']['uv']}';
+        windSpeed = '${data['current']['wind_kph']} km/h';
+        drivingDifficulty =
+        '${_calculateDrivingDifficulty(data['current']['wind_kph'])}';
+        visibility = '${data['current']['vis_miles']} m';
+        moonPhase = '${data['forecast']['forecastday'][0]['astro']['moon_phase']}';
+        feelsLike = '${((data['current']['feelslike_c']) as double).ceil()}°C';
+        String formattedTime = DateFormat('H:mm').format(DateTime.now());
+        forecastInfo = '\t \t \t \t \t$formattedTime\nCurrent weather:';
+        _temperatureSpots = _createTemperatureSpots(data);
+        precipMm = '${data['current']['precip_mm']} mm';
+        _weatherInfoList.clear();
+
+        List<dynamic> forecastDays = data['forecast']['forecastday'];
+        for (var days in forecastDays) {
+          WeatherDayInfo weatherDayInfo = WeatherDayInfo(
+            date: days['date'],
+            maxTemp: '${((days['day']['maxtemp_c'] as double).ceil())}°C',
+            minTemp: '${((days['day']['mintemp_c'] as double).ceil())}°C',
+            humidity: '${days['day']['avghumidity']}%',
+            precipMm: '${days['day']['totalprecip_mm']} mm',
+          );
+          _weatherInfoList.add(weatherDayInfo);
+        }
+      });
+    } else {
+      throw Exception('Failed to load weather data');
+    }
+
+
+    setState(() {
+      _isRefreshing = false;
+    });
+  }
+
+  void _showLocationDialog(BuildContext context) {
+    TextEditingController locationController = TextEditingController();
+    locationController.text = selectedLocation; // Sử dụng selectedLocation ở đây
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0), // Đặt border-radius tại đây
+          ),
+          backgroundColor: Colors.grey.withAlpha(500),
+          title: Text('Choose/Add Location'),
+          content: TextField(
+            controller: locationController,
+            decoration: InputDecoration(labelText: 'Enter location'),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                setState(() {
+                  selectedLocation = locationController.text;
+                });
+
+                _fetchWeatherData();
+
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void addLocationToDatabase(String locationName) async {
+    final conn = await MySqlConnection.connect(ConnectionSettings(
+      host: 'your_mysql_host',
+      port: 3306,
+      user: 'your_username',
+      password: 'your_password',
+      db: 'your_database_name',
+    ));
+
+    await conn.query('INSERT INTO Locations (location_name) VALUES (?)', [locationName]);
+
+    await conn.close();
+  }
+
+  String _calculateDrivingDifficulty(double windSpeed) {
+    if (windSpeed < 10) {
+      return 'Low';
+    } else if (windSpeed < 25) {
+      return 'Moderate';
+    } else {
+      return 'High';
+    }
+  }
+
+  List<FlSpot> _createTemperatureSpots(Map<String, dynamic> data) {
+    List<FlSpot> spots = [];
+
+    List<dynamic> hourly = data['forecast']['forecastday'][0]['hour'];
+
+    for (int i = 0; i < hourly.length; i++) {
+      double temp = (hourly[i]['temp_c'] as double).toDouble();
+      spots.add(FlSpot(i.toDouble(), temp));
+    }
+
+    return spots;
+  }
+
+  Future<void> _refreshData() async {
+    await _fetchWeatherData();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchWeatherData();
+  }
+
+  String _getGifForTime() {
+    DateTime now = DateTime.now();
+    int hour = now.hour;
+    String weatherCondition = conditionInfo.toLowerCase();
+
+    if (weatherCondition.contains("rain") || weatherCondition.contains("sleet") || weatherCondition.contains("freezing drizzle") || weatherCondition.contains("light drizzle") || weatherCondition.contains("freezing drizzle") || weatherCondition.contains("freezing drizzle") ) {
+      if (hour >= 6 && hour < 12) {
+        return 'assets/images/morning-rain.jpg';
+      } else if (hour >= 12 && hour < 17) {
+        return 'assets/images/afternoon-rain.jpg';
+      } else if (hour >= 17 && hour < 20) {
+        return 'assets/images/evening-rain.jpg';
+      } else {
+        return 'assets/images/night-rain.jpg';
+      }
+    } else {
+      if (hour >= 6 && hour < 12) {
+        return 'assets/images/morning.jpg';
+      } else if (hour >= 12 && hour < 17) {
+        return 'assets/images/afternoon.jpg';
+      } else if (hour >= 17 && hour < 20) {
+        return 'assets/images/evening.jpg';
+      } else {
+        return 'assets/images/night.jpg';
+      }
+    }
+  }
+
+
+  Widget _buildInfoLabel(String title, String value) {
+    return Container(
+      width: 100.0,
+      height: 112.0,
+      decoration: BoxDecoration(
+        border: Border.all(color: Color(0xFF4f00b9)),
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 4.0),
+          Text(
+            value,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          padding: EdgeInsets.symmetric(horizontal: 20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 0.0),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.wb_sunny,
+                        size: 38.0,
+                        color: Colors.yellow,
+                      ),
+                      onPressed: () {},
+                    ),
+                  ),
+                  SizedBox(width: 100),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 0.0),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.newspaper,
+                        size: 38.0,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => NewsScreen()),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 0.0),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Weather',
+                    style: TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(width: 100),
+                  Text(
+                    'News',
+                    style: TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [],
+      ),
+      drawer: CustomDrawer(_showLocationDialog),
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      temperature,
+                      style: TextStyle(fontSize: 36.0),
+                    ),
+                    Container(
+                      width: 250.0,
+                      height: 200.0,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20.0),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20.0),
+                        child: Image.asset(
+                          _getGifForTime(),
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16.0),
+                Text('Condition Info: $conditionInfo'),
+                SizedBox(height: 16.0),
+                Container(
+                  height: 452.0,
+                  decoration: BoxDecoration(
+                    color: Color(0xFF1e003d).withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            forecastInfo,
+                            style: TextStyle(fontSize: 20.0),
+                          ),
+                          _isRefreshing
+                              ? CircularProgressIndicator()
+                              : IconButton(
+                            icon: Icon(
+                              Icons.refresh,
+                              color: Colors.white,
+                            ),
+                            onPressed: _refreshData,
+                          )
+                        ],
+                      ),
+                      SizedBox(height: 8.0),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildInfoLabel('Humidity', humidity),
+                          _buildInfoLabel('Max Temp', maxTemperature),
+                          _buildInfoLabel('Min Temp', minTemperature),
+                        ],
+                      ),
+                      SizedBox(height: 8.0),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildInfoLabel('UV Index', uvIndex),
+                          _buildInfoLabel('Wind Speed', windSpeed),
+                          _buildInfoLabel('Driving Difficutly', drivingDifficulty),
+                        ],
+                      ),
+                      SizedBox(height: 8.0,),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildInfoLabel('Visibility', visibility),
+                          _buildInfoLabel('Moon Phase', moonPhase),
+                          _buildInfoLabel('Feels Like', feelsLike),
+                        ],
+                      ),
+                      SizedBox(height: 8.0),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 16.0),
+                SingleChildScrollView(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    padding: const EdgeInsets.all(16.0),
+                    child: WeatherInfoContainer(
+                      time: DateTime.now().toString(),
+                      temperature: temperature,
+                      precipMm: precipMm,
+                      humidity: humidity,
+                      temperatureSpots: _temperatureSpots,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16.0),
+                SingleChildScrollView(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.blueAccent.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: _weatherInfoList.map((weatherInfo) {
+                        return Card(
+                          color: Colors.grey.withOpacity(0.3),
+                          elevation: 4.0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(16.0),
+                            title: Text(
+                              '${_getDayOfWeek(weatherInfo.date)}',
+                              style: TextStyle(
+                                fontSize: 20.0,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      '${weatherInfo.maxTemp}/${weatherInfo.minTemp}',
+                                      style: TextStyle(
+                                        fontSize: 18.0,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Humidity: ${weatherInfo.humidity}',
+                                      style: TextStyle(
+                                        fontSize: 16.0,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 8.0),
+                                Text(
+                                  'Precipitation: ${weatherInfo.precipMm}',
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
