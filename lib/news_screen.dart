@@ -135,9 +135,6 @@ class _NewsScreenState extends State<NewsScreen> {
         throw Exception('Failed to load RSS data');
       }
     } finally {
-      // Kết thúc quá trình làm mới
-      // Đảm bảo rằng RefreshIndicator đã kết thúc quá trình làm mới
-      // Việc này sẽ ẩn đi hiệu ứng làm mới
     }
   }
 
@@ -174,7 +171,6 @@ class _NewsScreenState extends State<NewsScreen> {
                         color: Colors.yellow,
                       ),
                       onPressed: () {
-                        // Navigate to Weather screen
                         Navigator.pop(context);
                       },
                     ),
@@ -189,7 +185,6 @@ class _NewsScreenState extends State<NewsScreen> {
                         color: Colors.white,
                       ),
                       onPressed: () {
-                        // Do nothing (already on News screen)
                       },
                     ),
                   ),
@@ -222,7 +217,6 @@ class _NewsScreenState extends State<NewsScreen> {
           ),
         ),
         actions: [
-          // ... (nút bấm bên phải nếu cần)
         ],
       ),
       drawer: CustomDrawer(onRssMenuSelected: handleMenuSelected),

@@ -317,16 +317,15 @@ class _WeatherAppState extends State<WeatherApp> {
   Future<void> saveToDatabase(String location) async {
     try {
       final MySqlConnection connection = await MySqlConnection.connect(ConnectionSettings(
-        host: 'thgilnus.c7nsxh2avd6a.ap-southeast-2.rds.amazonaws.com',
+        host: 'inus-users.ckjforryv7ff.ap-southeast-1.rds.amazonaws.com',
         port: 3306,
         user: 'admin',
-        password: '12345678',
+        password: '01234567',
         db: 'locations',
       ));
 
-      // Insert data into a table
       await connection.query(
-          'INSERT INTO LocationInfo (location) VALUES (?)',
+          'INSERT INTO locations (location) VALUES (?)',
           [location]);
 
       await connection.close();

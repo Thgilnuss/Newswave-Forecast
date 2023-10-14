@@ -16,8 +16,8 @@ class WebViewScreen extends StatelessWidget {
         backgroundColor: Colors.black,
         elevation: 0,
       ),
-      body: Padding( // Thêm thuộc tính này
-        padding: EdgeInsets.only(top: 90.0), // Đặt khoảng cách mong muốn
+      body: Padding(
+        padding: EdgeInsets.only(top: 90.0),
         child: WebView(
           initialUrl: url,
           javascriptMode: JavascriptMode.unrestricted,
