@@ -2,6 +2,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'login.dart';
+import 'register.dart';
 import 'package:intl/intl.dart';
 import 'news_screen.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -15,7 +17,9 @@ void main() {
   runApp(MyApp());
 }
 
+
 class MyApp extends StatelessWidget {
+  bool isLoggedIn = false;
   @override
   Widget build(BuildContext context) {
     DateTime now = DateTime.now();
@@ -41,7 +45,12 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       theme: myTheme,
-      home: WeatherApp(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => WeatherApp(),
+        '/register': (context) => RegisterScreen(),
+        '/login': (context) => LoginScreen(),
+      },
     );
   }
 }
@@ -86,11 +95,30 @@ class CustomDrawer extends StatelessWidget {
                 ),
                 ListTile(
                   title: Text(
-                    'Location added',
+                    'Location management',
                     style: TextStyle(color: Colors.white, fontSize: 18),
                   ),
                   onTap: () {
                     Navigator.pop(context);
+                  },
+                ),
+                SizedBox(height: 570.0),
+                ListTile(
+                  title: Text(
+                    'Login',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                  onTap: () {
+                    Navigator.pushNamed(context, '/login');
+                  },
+                ),
+                ListTile(
+                  title: Text(
+                    'Sign up',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                  onTap: () {
+                    Navigator.pushNamed(context, '/register');
                   },
                 ),
               ],
@@ -101,6 +129,7 @@ class CustomDrawer extends StatelessWidget {
     );
   }
 }
+
 
 class WeatherDayInfo {
   final String date;
@@ -369,8 +398,6 @@ class _WeatherAppState extends State<WeatherApp> {
                 _fetchWeatherData();
                 Navigator.of(context).pop();
                 saveToDatabase(selectedLocation);
-
-
               },
             ),
           ],
@@ -713,7 +740,6 @@ class _WeatherAppState extends State<WeatherApp> {
                     ),
                   ),
                 )
-
               ],
             ),
           ),
