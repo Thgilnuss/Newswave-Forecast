@@ -38,6 +38,7 @@ dependencies:
   http: ^0.13.3
   geolocator: ^7.0.0
   webview_flutter: ^2.0.13
+  html: ^0.15.4
   
 dev_dependencies:
   flutter_test:

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mysql1/mysql1.dart';
 import 'register.dart';
 import 'main.dart';
+
 class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -32,14 +33,14 @@ class TimeBasedShape extends StatelessWidget {
   Widget build(BuildContext context) {
     int currentHour = DateTime.now().hour;
 
-    Widget shape = (currentHour >= 6 && currentHour < 18)
+    Widget shape = (currentHour >= 6 && currentHour < 17)
         ? Icon(Icons.wb_sunny, size: 300.0, color: Colors.orange)
         : Transform.rotate(
       angle: 30 * 3.14 / 180,
       child: Icon(Icons.brightness_2, size: 300.0, color: Colors.blue),
     );
 
-    Color cloudColor = (currentHour >= 6 && currentHour < 18) ? Colors.white : Colors.grey;
+    Color cloudColor = (currentHour >= 6 && currentHour < 17) ? Colors.white : Colors.grey;
 
     return Container(
       padding: EdgeInsets.all(16.0),
@@ -213,7 +214,11 @@ class _LoginFormState extends State<LoginForm> {
           ),
 
           SizedBox(height: 16.0),
-          Text("Don't have an account?"),
+          Text(
+            "Don't have an account?",
+          style: TextStyle(
+            color: Colors.white
+          ),),
           TextButton(
             onPressed: _navigateToRegisterScreen,
             child: Text('Sign up'),

@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
     Color textColor;
     ThemeData myTheme = ThemeData();
 
-    if (hour >= 6 && hour <= 18) {
+    if (hour >= 6 && hour < 18) {
       myTheme = myTheme.copyWith(
         scaffoldBackgroundColor: Color(0xFF5991E1).withAlpha(3000),
         appBarTheme: AppBarTheme(backgroundColor: Color(0xFF5991E1).withAlpha(3000)),
@@ -596,7 +596,19 @@ class _WeatherAppState extends State<WeatherApp> {
                   ],
                 ),
                 SizedBox(height: 16.0),
-                Text('Condition Info: $conditionInfo'),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Icon(Icons.location_on, size: 20, color: Colors.white,),
+                        Text('$selectedLocation', style: TextStyle(fontSize: 20, fontStyle: FontStyle.italic)),
+                      ],
+                    ),
+                    Text('\nCondition Info: $conditionInfo', style: TextStyle(fontSize: 16)),
+                  ],
+                ),
                 SizedBox(height: 16.0),
                 Container(
                   height: 452.0,

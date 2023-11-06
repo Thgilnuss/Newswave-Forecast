@@ -9,10 +9,10 @@ import 'package:http/http.dart' as http;
 
 class NewsInfo {
   final String title;
-  final String image;
+  final String imageUrl;
   final String link;
 
-  NewsInfo({required this.title, required this.image, required this.link});
+  NewsInfo({required this.title, required this.imageUrl, required this.link});
 }
 
 void openLinkInWebView(BuildContext context, String url) {
@@ -34,7 +34,7 @@ class CustomDrawer extends StatelessWidget {
         style: TextStyle(color: Color(0xFFffffe6), fontSize: 18),
       ),
       onTap: () {
-        onRssMenuSelected(NewsInfo(title: title, image: '', link: rssUrl));
+        onRssMenuSelected(NewsInfo(title: title, imageUrl: '', link: rssUrl));
       },
     );
   }
@@ -124,9 +124,14 @@ class _NewsScreenState extends State<NewsScreen> {
         List<NewsInfo> newsList = [];
         for (var item in xmlDoc.findAllElements('item')) {
           var title = item.getElement('title')?.text ?? '';
-          var image = 'assets/images/VnExpress.jpg';
+          var description = item.getElement('description')?.text ?? '';
           var link = item.getElement('link')?.text ?? '';
-          newsList.add(NewsInfo(title: title, image: image, link: link));
+
+          // Trích xuất URL của hình ảnh từ phần mô tả (description) của tin tức
+          var imageUrlMatch = RegExp(r'<img src="([^"]+)"').firstMatch(description);
+          var imageUrl = imageUrlMatch?.group(1) ?? '';
+
+          newsList.add(NewsInfo(title: title, imageUrl: imageUrl, link: link));
         }
         setState(() {
           selectedNewsInfoList = newsList;
@@ -137,6 +142,7 @@ class _NewsScreenState extends State<NewsScreen> {
     } finally {
     }
   }
+
 
 
   void handleMenuSelected(NewsInfo newsInfo) async {
@@ -150,7 +156,6 @@ class _NewsScreenState extends State<NewsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF140029).withOpacity(0.9),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -224,43 +229,74 @@ class _NewsScreenState extends State<NewsScreen> {
         onRefresh: () async{
           await fetchRssData(selectedRssUrl);
         },
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView.builder(
-          itemCount: selectedNewsInfoList.length,
-          itemBuilder: (context, index) {
-            var newsInfo = selectedNewsInfoList[index];
-            return Card(
-              color: Colors.blue.withOpacity(0.27),
-              elevation: 5,
-              margin: EdgeInsets.symmetric(vertical: 10),
-              child: ListTile(
-                contentPadding: EdgeInsets.all(10.0),
-                leading: Container(
-                  width: 80.0,
-                  child: Image.asset(
-                    newsInfo.image,
-                  ),
-                ),
-                title: SizedBox(
-                  width: MediaQuery.of(context).size.width - 200,
-                  child: Text(
-                    newsInfo.title,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ListView.builder(
+            itemCount: selectedNewsInfoList.length,
+            itemBuilder: (context, index) {
+              var newsInfo = selectedNewsInfoList[index];
+              if (Uri.tryParse(newsInfo.imageUrl)?.hasScheme ?? false) {
+                return Card(
+                  color: Colors.blue.withOpacity(0.27),
+                  elevation: 5,
+                  margin: EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20.0),
+                      topRight: Radius.circular(20.0),
+                      bottomRight: Radius.circular(10.0),
+                      bottomLeft: Radius.circular(10.0)
                     ),
                   ),
-                ),
-                onTap: () {
-                  openLinkInWebView(context, newsInfo.link);
-                },
-              ),
-            );
-          },
+                  child: Column(
+                    children: [
+                      Container(
+                        height: 200.0,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(20.0),
+                            topRight: Radius.circular(20.0),
+                            bottomLeft: Radius.circular(10.0),
+                            bottomRight: Radius.circular(10.0)
+                          ),
+                          child: Image.network(
+                            newsInfo.imageUrl,
+                            width: MediaQuery.of(context).size.width,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                      ListTile(
+                        contentPadding: EdgeInsets.all(10.0),
+                        title: Text(
+                          newsInfo.title,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        subtitle: Text(
+                          '2g trước', // Thay thời gian thực bằng dữ liệu từ RSS
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 16,
+                          ),
+                        ),
+                        onTap: () {
+                          openLinkInWebView(context, newsInfo.link);
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              } else {
+                // Xử lý nếu URL không hợp lệ
+                return Container(); // Hoặc một widget khác để báo lỗi
+              }
+            },
+          ),
         ),
-      ),
       ),
     );
   }
