@@ -39,7 +39,7 @@ dependencies:
   geolocator: ^7.0.0
   webview_flutter: ^2.0.13
   html: ^0.15.4
-  
+  animated_icon_button: ^1.0.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

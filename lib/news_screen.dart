@@ -7,6 +7,7 @@ import 'browser.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+
 class NewsInfo {
   final String title;
   final String imageUrl;
@@ -127,7 +128,6 @@ class _NewsScreenState extends State<NewsScreen> {
           var description = item.getElement('description')?.text ?? '';
           var link = item.getElement('link')?.text ?? '';
 
-          // Trích xuất URL của hình ảnh từ phần mô tả (description) của tin tức
           var imageUrlMatch = RegExp(r'<img src="([^"]+)"').firstMatch(description);
           var imageUrl = imageUrlMatch?.group(1) ?? '';
 
@@ -241,58 +241,39 @@ class _NewsScreenState extends State<NewsScreen> {
                   elevation: 5,
                   margin: EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20.0),
-                      topRight: Radius.circular(20.0),
-                      bottomRight: Radius.circular(10.0),
-                      bottomLeft: Radius.circular(10.0)
-                    ),
+                    borderRadius: BorderRadius.circular(20.0),
                   ),
-                  child: Column(
-                    children: [
-                      Container(
-                        height: 200.0,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(20.0),
-                            topRight: Radius.circular(20.0),
-                            bottomLeft: Radius.circular(10.0),
-                            bottomRight: Radius.circular(10.0)
-                          ),
+                  child: InkWell(
+                    onTap: () {
+                      openLinkInWebView(context, newsInfo.link);
+                    },
+                    child: Column(
+                      children: [
+                        Container(
+                          height: 200.0,
                           child: Image.network(
                             newsInfo.imageUrl,
                             width: MediaQuery.of(context).size.width,
                             fit: BoxFit.cover,
                           ),
                         ),
-                      ),
-                      ListTile(
-                        contentPadding: EdgeInsets.all(10.0),
-                        title: Text(
-                          newsInfo.title,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                        ListTile(
+                          contentPadding: EdgeInsets.all(10.0),
+                          title: Text(
+                            newsInfo.title,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        subtitle: Text(
-                          '2g trước', // Thay thời gian thực bằng dữ liệu từ RSS
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 16,
-                          ),
-                        ),
-                        onTap: () {
-                          openLinkInWebView(context, newsInfo.link);
-                        },
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 );
               } else {
-                // Xử lý nếu URL không hợp lệ
-                return Container(); // Hoặc một widget khác để báo lỗi
+                return Container();
               }
             },
           ),

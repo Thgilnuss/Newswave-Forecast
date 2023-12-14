@@ -10,7 +10,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:mysql1/mysql1.dart';
 
-const String apiKey = 'e577c54340ac483aa35105157233008';
+const String apiKey = 'e9f33111dca14bda992105426231112';
 const String baseUrl = 'http://api.weatherapi.com/v1/forecast.json';
 
 void main() {
@@ -29,11 +29,11 @@ class MyApp extends StatelessWidget {
     Color textColor;
     ThemeData myTheme = ThemeData();
 
-    if (hour >= 6 && hour < 18) {
+    if (hour >= 6 && hour < 24) {
       myTheme = myTheme.copyWith(
         scaffoldBackgroundColor: Color(0xFF5991E1).withAlpha(3000),
         appBarTheme: AppBarTheme(backgroundColor: Color(0xFF5991E1).withAlpha(3000)),
-        textTheme: TextTheme(bodyText2: TextStyle(color: Colors.black)),
+        textTheme: TextTheme(bodyText2: TextStyle(color: Color(0xFFFFFFe6))),
       );
     } else {
       myTheme = myTheme.copyWith(
@@ -102,25 +102,6 @@ class CustomDrawer extends StatelessWidget {
                     Navigator.pop(context);
                   },
                 ),
-                SizedBox(height: 570.0),
-                ListTile(
-                  title: Text(
-                    'Login',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
-                  ),
-                  onTap: () {
-                    Navigator.pushNamed(context, '/login');
-                  },
-                ),
-                ListTile(
-                  title: Text(
-                    'Sign up',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
-                  ),
-                  onTap: () {
-                    Navigator.pushNamed(context, '/register');
-                  },
-                ),
               ],
             ),
           ),
@@ -168,8 +149,8 @@ class WeatherInfoContainer extends StatelessWidget {
       width: 400.0,
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        border: Border.all(color: Color(0xFF4f00b9)),
-        color: Color(0xFF1e003d).withOpacity(0.05),
+        border: Border.all(color: Colors.white70),
+        color: Colors.blue.withOpacity(0.3),
         borderRadius: BorderRadius.circular(10.0),
       ),
       child: Column(
@@ -316,7 +297,7 @@ class _WeatherAppState extends State<WeatherApp> {
         moonPhase = '${data['forecast']['forecastday'][0]['astro']['moon_phase']}';
         feelsLike = '${((data['current']['feelslike_c']) as double).ceil()}°C';
         String formattedTime = DateFormat('H:mm').format(DateTime.now());
-        forecastInfo = '\t \t \t \t \t$formattedTime\nCurrent weather:';
+        forecastInfo = '$formattedTime\nCurrent weather:';
         _temperatureSpots = _createTemperatureSpots(data);
         precipMm = '${data['current']['precip_mm']} mm';
         _weatherInfoList.clear();
@@ -350,11 +331,11 @@ class _WeatherAppState extends State<WeatherApp> {
         port: 3306,
         user: 'admin',
         password: '01234567',
-        db: 'locations',
+        db: 'weather_news',
       ));
 
       await connection.query(
-          'INSERT INTO locations (location) VALUES (?)',
+          'INSERT INTO Locations (LocationName) VALUES (?)',
           [location]);
 
       await connection.close();
@@ -362,7 +343,6 @@ class _WeatherAppState extends State<WeatherApp> {
       print('Error: Unable to connect to the database. $e');
     }
   }
-
 
 
   void _showLocationDialog(BuildContext context) {
@@ -467,33 +447,43 @@ class _WeatherAppState extends State<WeatherApp> {
     }
   }
 
-
-  Widget _buildInfoLabel(String title, String value) {
+  Widget _buildInfoLabel(IconData icon, String title, String value) {
     return Container(
       width: 100.0,
       height: 112.0,
       decoration: BoxDecoration(
-        border: Border.all(color: Color(0xFF4f00b9)),
+        border: Border.all(color: Colors.white70),
         borderRadius: BorderRadius.circular(10.0),
       ),
       padding: const EdgeInsets.all(8.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Stack(
+        alignment: Alignment.topCenter,
         children: [
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.bold),
+          Icon(
+              icon,
+              color: Colors.white,
           ),
-          SizedBox(height: 4.0),
-          Text(
-            value,
-            textAlign: TextAlign.center,
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(height: 24.0),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 4.0),
+              Text(
+                value,
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ],
       ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -516,7 +506,7 @@ class _WeatherAppState extends State<WeatherApp> {
                       icon: Icon(
                         Icons.wb_sunny,
                         size: 38.0,
-                        color: Colors.yellow,
+                        color: Colors.yellowAccent,
                       ),
                       onPressed: () {},
                     ),
@@ -528,7 +518,7 @@ class _WeatherAppState extends State<WeatherApp> {
                       icon: Icon(
                         Icons.newspaper,
                         size: 38.0,
-                        color: Colors.white,
+                        color: Colors.blueAccent,
                       ),
                       onPressed: () {
                         Navigator.push(
@@ -613,7 +603,7 @@ class _WeatherAppState extends State<WeatherApp> {
                 Container(
                   height: 452.0,
                   decoration: BoxDecoration(
-                    color: Color(0xFF1e003d).withOpacity(0.3),
+                    color: Colors.blue.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(10.0),
                   ),
                   padding: const EdgeInsets.all(16.0),
@@ -642,27 +632,27 @@ class _WeatherAppState extends State<WeatherApp> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildInfoLabel('Humidity', humidity),
-                          _buildInfoLabel('Max Temp', maxTemperature),
-                          _buildInfoLabel('Min Temp', minTemperature),
+                          _buildInfoLabel(Icons.water_drop,'Humidity', humidity),
+                          _buildInfoLabel(Icons.whatshot,'Max Temp', maxTemperature),
+                          _buildInfoLabel(Icons.ac_unit,'Min Temp', minTemperature),
                         ],
                       ),
                       SizedBox(height: 8.0),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildInfoLabel('UV Index', uvIndex),
-                          _buildInfoLabel('Wind Speed', windSpeed),
-                          _buildInfoLabel('Driving Difficutly', drivingDifficulty),
+                          _buildInfoLabel(Icons.bedtime,'Moon', moonPhase),
+                          _buildInfoLabel(Icons.air,'Wind Speed', windSpeed),
+                          _buildInfoLabel(Icons.directions_car_filled,'Driving Difficutly', drivingDifficulty),
                         ],
                       ),
                       SizedBox(height: 8.0,),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildInfoLabel('Visibility', visibility),
-                          _buildInfoLabel('Moon Phase', moonPhase),
-                          _buildInfoLabel('Feels Like', feelsLike),
+                          _buildInfoLabel(Icons.visibility,'Visibility', visibility),
+                          _buildInfoLabel(Icons.wb_sunny_rounded,'UV Index', uvIndex),
+                          _buildInfoLabel(Icons.thermostat_rounded,'Feels Like', feelsLike),
                         ],
                       ),
                       SizedBox(height: 8.0),
@@ -702,7 +692,7 @@ class _WeatherAppState extends State<WeatherApp> {
                         ),
                         ..._weatherInfoList.map((weatherInfo) {
                           return Card(
-                            color: Colors.grey.withOpacity(0.3),
+                            color: Colors.grey.withOpacity(0.1),
                             elevation: 4.0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10.0),
@@ -712,6 +702,7 @@ class _WeatherAppState extends State<WeatherApp> {
                               title: Text(
                                 '${_getDayOfWeek(weatherInfo.date)}',
                                 style: TextStyle(
+                                  color: Colors.white,
                                   fontSize: 20.0,
                                   fontWeight: FontWeight.bold,
                                 ),
