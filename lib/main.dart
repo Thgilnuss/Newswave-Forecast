@@ -84,6 +84,7 @@ class CustomDrawer extends StatelessWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children: <Widget>[
+                SizedBox(height: 10.0,),
                 ListTile(
                   title: Text(
                     'Choose/Add location',
@@ -91,15 +92,6 @@ class CustomDrawer extends StatelessWidget {
                   ),
                   onTap: () {
                     showLocationDialog(context);
-                  },
-                ),
-                ListTile(
-                  title: Text(
-                    'Location management',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
                   },
                 ),
               ],
@@ -569,7 +561,7 @@ class _WeatherAppState extends State<WeatherApp> {
                     ),
                     Container(
                       width: 250.0,
-                      height: 200.0,
+                      height: 250.0,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20.0),
                       ),

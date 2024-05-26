@@ -117,31 +117,41 @@ class _NewsScreenState extends State<NewsScreen> {
     fetchRssData(selectedRssUrl);
   }
 
-  Future<void> fetchRssData(String url) async {
+  Future<void> fetchRssData(String? url) async {
+    if (url == null) {
+      return;
+    }
+
     try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final xmlDoc = XmlDocument.parse(utf8.decode(response.bodyBytes));
-        List<NewsInfo> newsList = [];
-        for (var item in xmlDoc.findAllElements('item')) {
-          var title = item.getElement('title')?.text ?? '';
-          var description = item.getElement('description')?.text ?? '';
-          var link = item.getElement('link')?.text ?? '';
+      final uri = Uri.tryParse(url);
+      if (uri != null) {
+        final response = await http.get(uri);
+        if (response.statusCode == 200) {
+          final xmlDoc = XmlDocument.parse(utf8.decode(response.bodyBytes));
+          List<NewsInfo> newsList = [];
+          for (var item in xmlDoc.findAllElements('item')) {
+            var title = item.getElement('title')?.text ?? '';
+            var description = item.getElement('description')?.text ?? '';
+            var link = item.getElement('link')?.text ?? '';
 
-          var imageUrlMatch = RegExp(r'<img src="([^"]+)"').firstMatch(description);
-          var imageUrl = imageUrlMatch?.group(1) ?? '';
+            var imageUrlMatch = RegExp(r'<img src="([^"]+)"').firstMatch(description);
+            var imageUrl = imageUrlMatch?.group(1) ?? '';
 
-          newsList.add(NewsInfo(title: title, imageUrl: imageUrl, link: link));
+            newsList.add(NewsInfo(title: title, imageUrl: imageUrl, link: link));
+          }
+          setState(() {
+            selectedNewsInfoList = newsList;
+          });
+        } else {
+          throw Exception('Failed to load RSS data');
         }
-        setState(() {
-          selectedNewsInfoList = newsList;
-        });
-      } else {
-        throw Exception('Failed to load RSS data');
       }
-    } finally {
+    } catch (error) {
+      print('Error fetching RSS data: $error');
     }
   }
+
+
 
 
 
